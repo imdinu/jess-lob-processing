@@ -1,0 +1,52 @@
+[project]
+name = "jess-lob"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "cryptography>=45.0.4",
+    "kaleido==0.2.1",
+    "notebook>=7.4.3",
+    "numpy>=2.3.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.0",
+    "plotly>=6.1.2",
+    "pycryptodome>=3.23.0",
+    "streamlit>=1.46.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "ruff>=0.12.0",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "ASYNC",
+    "B",
+    "E", 
+    "F", 
+    "I", 
+    "RUF", 
+    "UP",
+    "W",
+]
+
+exclude = [
+    ".ipynb",
+    ".ipynb_checkpoints",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "venv",
+]
+
+[tool.black]
+target-version = ["py313"]
+line-length = 120
