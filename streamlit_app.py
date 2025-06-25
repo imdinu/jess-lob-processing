@@ -32,14 +32,14 @@ col1.subheader("Coonfiguration")
 uploaded = col1.file_uploader("Upload raw Excel workbook", type=["xlsx"])
 if not uploaded:
     col1.info("… waiting for file ☝️")
-    col1.stop()
+    st.stop()
 
 # ---------- discover sheet names -----------------------------------------
 try:
     xls = pd.ExcelFile(uploaded)  # Reads from UploadedFile stream
 except Exception as exc:
     col1.error(f"❌ Could not read workbook: {exc}")
-    col1.stop()
+    st.stop()
 
 sheet_name = col1.selectbox("Choose worksheet", xls.sheet_names)
 
