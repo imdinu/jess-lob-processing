@@ -68,9 +68,11 @@ FINAL_COLS = [
 _RENAME = {  # raw → clean column names
     "Licensee": "Partner",
     "Product Category": "Category",
+    # "Product Category/Show / Right": "Category",
     "Primary Territory": "Primary territory",
     "SW #": "Combined SW #",
-    "Net Revenue": "Net revenue",
+    "FY25 Mar Est Total Net (US$)": "Net revenue",
+    # "Net Revenue": "Net revenue",
     "Start Date": "Start date",
     "End Date": "End date",
 }
@@ -227,7 +229,13 @@ def clean_workbook(
     # ---- load sheet (works for paths *and* bytes, no FutureWarning) ----
     xlsx = BytesIO(workbook) if isinstance(workbook, (bytes, bytearray)) else workbook
     hdr = _detect_header(xlsx, sheet)
-    raw = pd.read_excel(xlsx, sheet, header=hdr).rename(columns=_RENAME)
+    print(hdr, "header row detected")
+    raw = pd.read_excel(xlsx, sheet, header=hdr)
+    standardized_col_map = {
+        col: col.replace('\n', ' ').strip() for col in raw.columns
+    }
+    raw = raw.rename(columns=standardized_col_map)
+    raw = raw.rename(columns=_RENAME)
     raw = _tidy_strings(raw)
 
     # drop rows w/o category (= obvious placeholders)
@@ -241,8 +249,29 @@ def clean_workbook(
     for col in ("Start date", "End date"):
         raw[col] = pd.to_datetime(raw[col], errors="coerce")
 
+    # if lob_map is None:  # auto-discover ← more tolerant regex
+    #     lob_series = raw["Sub Dept"].apply(lambda x: x.split("-", 1)[1].strip())
+    #     lob_map = {lob: rf"{re.escape(lob)}" for lob in lob_series.dropna().unique()}
     if lob_map is None:  # auto-discover ← more tolerant regex
-        lob_series = raw["Sub Dept"].apply(lambda x: x.split("-", 1)[1].strip())
+        def get_lob_name(sub_dept_string):
+            sub_dept_string = str(sub_dept_string).strip()
+            if not sub_dept_string:
+                return None # Handle empty strings or NaNs
+
+            # Try to split by hyphen first (e.g., "Dept - TV Sales" -> "TV Sales")
+            if '-' in sub_dept_string:
+                return sub_dept_string.split("-", 1)[1].strip()
+            
+            # If no hyphen, for cases like "Dept. 143 Interactive",
+            # we assume the LOB is the last word/part after any leading identifiers.
+            # This handles "Dept. 143 Interactive" -> "Interactive"
+            words = sub_dept_string.split(' ')
+            if len(words) > 1:
+                return words[-1].strip()
+                
+            return sub_dept_string.strip() # Fallback for single-word entries or unexpected formats
+
+        lob_series = raw["Sub Dept"].apply(get_lob_name)
         lob_map = {lob: rf"{re.escape(lob)}" for lob in lob_series.dropna().unique()}
 
     frames = []
